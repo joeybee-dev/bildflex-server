@@ -52,12 +52,12 @@ const userSchema = new mongoose.Schema(
       enum: ["Male", "Female", "Prefer not to say", "Other"]
     },
 
-   birthYear: {
-     type: Number,
-     min: 1900,
-     max: new Date().getFullYear(),
-     default: null
-   },
+    birthYear: {
+      type: Number,
+      min: 1900,
+      max: new Date().getFullYear(),
+      default: null
+    },
 
     email: {
       type: String,
@@ -103,36 +103,6 @@ const userSchema = new mongoose.Schema(
         ref: "ProfessionalProfile"
       }
     ],
-
-    /*
-    appointmentRequests: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Appointment"
-      }
-    ],
-
-    hiringHistory: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Hiring"
-      }
-    ],
-
-    inquiries: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Inquiry"
-      }
-    ],
-
-    reviewsGiven: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Review"
-      }
-    ],
-    */
 
     verificationStatus: {
       type: String,
@@ -188,7 +158,7 @@ const userSchema = new mongoose.Schema(
   }
 );
 
-userSchema.pre("save", function (next) {
+userSchema.pre("save", function () {
   this.fullName = `${this.firstName || ""} ${this.lastName || ""}`
     .replace(/\s+/g, " ")
     .trim();
@@ -201,8 +171,6 @@ userSchema.pre("save", function (next) {
   } else {
     this.accountStatus = "active";
   }
-
-  next();
 });
 
 module.exports = mongoose.model("User", userSchema);

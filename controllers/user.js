@@ -1,47 +1,37 @@
 const User = require("../models/User");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
 const auth = require("../auth");
 
 // Register user
 module.exports.registerUser = async (req, res) => {
   try {
-    const {
-      profilePhoto,
-      firstName,
-      lastName,
-      gender,
-      birthYear,
-      email,
-      mobileNo,
-      city,
-      province,
-      country,
-      bio,
-      password
-    } = req.body;
+    console.log("register req.body:", req.body);
 
-    const existingUser = await User.findOne({ email: email?.toLowerCase() });
+    const { firstName, gender, email, city, country, password } = req.body;
 
+    if (!firstName || !gender || !email || !city || !password) {
+      return res.status(400).send({
+        error: "First name, gender, email, city, and password are required."
+      });
+    }
+
+    const normalizedEmail = String(email).trim().toLowerCase();
+
+    const existingUser = await User.findOne({ email: normalizedEmail });
     if (existingUser) {
       return res.status(409).send({
         error: "Email is already registered."
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(String(password), 10);
 
     const newUser = new User({
-      profilePhoto: profilePhoto || "",
-      firstName,
-      lastName: lastName || "",
-      gender,
-      birthYear: birthYear || null,
-      email: email.toLowerCase(),
-      mobileNo: mobileNo || "",
-      city,
-      province: province || "",
-      country: country || "Philippines",
-      bio: bio || "",
+      firstName: String(firstName).trim(),
+      gender: String(gender).trim(),
+      email: normalizedEmail,
+      city: String(city).trim(),
+      country: country ? String(country).trim() : "Philippines",
       password: hashedPassword
     });
 
@@ -52,26 +42,37 @@ module.exports.registerUser = async (req, res) => {
       user: {
         _id: savedUser._id,
         firstName: savedUser.firstName,
-        lastName: savedUser.lastName,
         fullName: savedUser.fullName,
+        gender: savedUser.gender,
         email: savedUser.email,
+        city: savedUser.city,
+        country: savedUser.country,
         userType: savedUser.userType
       }
     });
   } catch (err) {
     console.error("Register user error:", err);
 
+    if (err.code === 11000) {
+      return res.status(409).send({
+        error: "Email is already registered."
+      });
+    }
+
     if (err.name === "ValidationError") {
       return res.status(400).send({
-        error: Object.values(err.errors).map(e => e.message).join(", ")
+        error: Object.values(err.errors)
+          .map((e) => e.message)
+          .join(", ")
       });
     }
 
     return res.status(500).send({
-      error: "Failed to register user."
+      error: err.message || "Failed to register user."
     });
   }
 };
+
 
 // Login user
 module.exports.loginUser = async (req, res) => {
