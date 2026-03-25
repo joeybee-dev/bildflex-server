@@ -1,52 +1,49 @@
 const jwt = require("jsonwebtoken");
-const secret = "ProfessAPI";
+const secret = process.env.JWT_SECRET;
 
+// Create Access Token
+module.exports.createAccessToken = (user) => {
+  return jwt.sign(
+    {
+      id: user._id,
+      email: user.email,
+      isAdmin: user.isAdmin,
+      userType: user.userType
+    },
+    secret,
+    { expiresIn: "1d" }
+  );
+};
 
+// Verify Token
+module.exports.verify = (req, res, next) => {
+  let token = req.headers.authorization;
 
-    // Create Access
-    module.exports.createAccessToken = (user) => {
-      return jwt.sign(
-        {
-          id: user._id,
-          email: user.email,
-          isAdmin: user.isAdmin,
-          userType: user.userType
-        },
-        secret,
-        { expiresIn: "1d" }
-      );
-    };
+  if (!token) {
+    return res.status(401).send({ error: "Authorization header missing" });
+  }
 
+  if (!token.startsWith("Bearer ")) {
+    return res.status(401).send({ error: "Invalid authorization format" });
+  }
 
-    // Verify
-    module.exports.verify = (req, res, next) => {
-      let token = req.headers.authorization;
+  token = token.slice(7);
 
-      if (typeof token !== "undefined") {
-        token = token.slice(7, token.length);
+  jwt.verify(token, secret, (err, decodedToken) => {
+    if (err) {
+      return res.status(401).send({ error: "Invalid or expired token" });
+    }
 
-        jwt.verify(token, secret, function (err, decodedToken) {
-          if (err) {
-            return res.status(401).send({ error: "Invalid token" });
-          } else {
-            req.user = decodedToken;
-            next();
-          }
-        });
-      } else {
-        return res.status(401).send({ error: "Authorization header missing" });
-      }
-    };
+    req.user = decodedToken;
+    next();
+  });
+};
 
+// Verify Admin
+module.exports.verifyAdmin = (req, res, next) => {
+  if (!req.user || !req.user.isAdmin) {
+    return res.status(403).send({ error: "Action forbidden" });
+  }
 
-    // Verify Admin
-    module.exports.verifyAdmin = (req, res, next) => {
-      if (req.user.isAdmin) {
-        next();
-      } else {
-        return res.status(403).send({
-          error: "Action forbidden"
-        });
-      }
-    };
-
+  next();
+};
