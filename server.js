@@ -7,12 +7,19 @@ const userRoutes = require("./routes/user");
 
 const app = express();
 
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 4000;
 const MONGODB_URI = process.env.MONGODB_URI;
-const CLIENT_URL = process.env.CLIENT_URL;
+const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.use(
+  cors({
+    origin: CLIENT_URL,
+    credentials: true
+  })
+);
 
 mongoose.connect(MONGODB_URI);
 
