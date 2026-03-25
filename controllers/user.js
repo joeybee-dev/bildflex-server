@@ -1,6 +1,6 @@
 const User = require("../models/User");
 const bcrypt = require("bcryptjs");
-const auth = require("../auth");
+const auth = require("../middlewares/auth");
 
 // Register user
 module.exports.registerUser = async (req, res) => {

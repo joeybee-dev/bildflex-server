@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const upload = require("../middlewares/upload");
 const professionalProfileController = require("../controllers/professionalProfile");
-const { verify } = require("../auth");
+const { verify } = require("../middlewares/auth");
 const mongoose = require("mongoose");
 
 // Register

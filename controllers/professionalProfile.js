@@ -1,6 +1,6 @@
 const ProfessionalProfile = require("../models/ProfessionalProfile");
 const bcrypt = require("bcrypt");
-const auth = require("../auth");
+const auth = require("../middlewares/auth");
 const uploadToCloudinary = require("../utils/uploadToCloudinary");
 const mongoose = require("mongoose");
 

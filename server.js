@@ -10,7 +10,7 @@ const app = express();
 
 const PORT = process.env.PORT || 4000;
 const MONGODB_URI = process.env.MONGODB_URI;
-const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5173";
+const CLIENT_URL = process.env.CLIENT_URL;
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
