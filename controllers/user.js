@@ -1,12 +1,19 @@
+const streamifier = require("streamifier");
+const cloudinary = require("../config/cloudinary");
 const User = require("../models/User");
+const jwt = require("jsonwebtoken");
+const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const auth = require("../middlewares/auth");
 const mongoose = require("mongoose");
 
+const JWT_SECRET = process.env.JWT_SECRET;
+const CLIENT_URL = process.env.CLIENT_URL;
+
 // Register user
 module.exports.registerUser = async (req, res) => {
   try {
-    const {
+    const { 
       firstName,
       lastName,
       gender,
@@ -288,6 +295,38 @@ module.exports.archiveUser = async (req, res) => {
   }
 };
 
+
+// Get specific user by ID (Admin only)
+module.exports.getSpecificUser = async (req, res) => {
+  try {
+    const { userId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).send({
+        error: "Invalid user ID"
+      });
+    }
+
+    const user = await User.findById(userId).select("-password");
+
+    if (!user) {
+      return res.status(404).send({
+        error: "User not found"
+      });
+    }
+
+    return res.status(200).send({
+      user
+    });
+  } catch (error) {
+    console.error("Get specific user error:", error);
+    return res.status(500).send({
+      error: "Failed to fetch user"
+    });
+  }
+};
+
+
 // Activate user (Admin only)
 module.exports.activateUser = async (req, res) => {
   try {
@@ -351,6 +390,149 @@ module.exports.deleteUser = async (req, res) => {
     console.error("Delete user error:", err);
     return res.status(500).send({
       error: "Failed to delete user."
+    });
+  }
+};
+
+// Upload User Photo
+module.exports.uploadUserPhoto = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).send({
+        error: "No image file uploaded."
+      });
+    }
+
+    const userId = req.user.id;
+
+    const uploadFromBuffer = (fileBuffer) =>
+      new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          {
+            folder: "bildex/users",
+            resource_type: "image"
+          },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+
+        streamifier.createReadStream(fileBuffer).pipe(stream);
+      });
+
+    const result = await uploadFromBuffer(req.file.buffer);
+
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { profilePhoto: result.secure_url },
+      { new: true }
+    );
+
+    return res.status(200).send({
+      message: "Profile photo uploaded successfully.",
+      imageUrl: result.secure_url,
+      user
+    });
+  } catch (err) {
+    console.error("Upload user photo error:", err);
+    return res.status(500).send({
+      error: "Failed to upload profile photo."
+    });
+  }
+};
+
+
+// Forgot Password
+module.exports.forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).send({
+        error: "Email is required."
+      });
+    }
+
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+
+    if (!user) {
+      return res.status(404).send({
+        error: "No user found with that email."
+      });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+
+    user.passwordResetToken = resetToken;
+    user.passwordResetExpires = Date.now() + 1000 * 60 * 15; // 15 minutes
+
+    await user.save();
+
+    return res.status(200).send({
+      message: "Password reset token generated successfully.",
+      resetToken,
+      resetLink: `http://localhost:5173/reset-password/${resetToken}`
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return res.status(500).send({
+      error: "Failed to process forgot password request."
+    });
+  }
+};
+
+
+// Reset Password
+module.exports.resetPassword = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { password, confirmPassword } = req.body;
+
+    if (!password || !confirmPassword) {
+      return res.status(400).send({
+        error: "Password and confirm password are required."
+      });
+    }
+
+    if (password !== confirmPassword) {
+      return res.status(400).send({
+        error: "Passwords do not match."
+      });
+    }
+
+    if (password.length < 8) {
+      return res.status(400).send({
+        error: "Password must be at least 8 characters."
+      });
+    }
+
+    const user = await User.findOne({
+      passwordResetToken: token,
+      passwordResetExpires: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return res.status(400).send({
+        error: "Invalid or expired reset token."
+      });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    user.password = hashedPassword;
+    user.passwordResetToken = "";
+    user.passwordResetExpires = null;
+
+    await user.save();
+
+    return res.status(200).send({
+      message: "Password has been reset successfully."
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return res.status(500).send({
+      error: "Failed to reset password."
     });
   }
 };

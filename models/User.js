@@ -151,6 +151,16 @@ const userSchema = new mongoose.Schema(
     password: {
       type: String,
       required: [true, "Password is required"]
+    },
+
+    passwordResetToken: {
+       type: String,
+       default: ""
+    },
+
+    passwordResetExpires: {
+       type: Date,
+       default: null
     }
   },
   {
