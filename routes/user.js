@@ -9,8 +9,8 @@ const upload = require("../middlewares/upload");
 // Public
 router.post("/register-user", userController.registerUser);
 router.post("/login-user", userController.loginUser);
-router.post("/forgot-password", userController.forgotPassword);
-router.post("/reset-password/:token", userController.resetPassword);
+router.post("/forgot-password-user", userController.forgotPasswordUser);
+router.post("/reset-password-user/:token", userController.resetPasswordUser);
 
 // Logged-in user
 router.get("/details-user", verify, userController.getUserDetails);

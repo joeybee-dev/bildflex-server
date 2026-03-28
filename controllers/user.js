@@ -6,6 +6,7 @@ const crypto = require("crypto");
 const bcrypt = require("bcryptjs");
 const auth = require("../middlewares/auth");
 const mongoose = require("mongoose");
+const sendEmail = require("../utils/sendEmail");
 
 const JWT_SECRET = process.env.JWT_SECRET;
 const CLIENT_URL = process.env.CLIENT_URL;
@@ -444,9 +445,11 @@ module.exports.uploadUserPhoto = async (req, res) => {
 
 
 // Forgot Password
-module.exports.forgotPassword = async (req, res) => {
+module.exports.forgotPasswordUser = async (req, res) => {
   try {
     const { email } = req.body;
+
+    console.log("Forgot password request email:", email);
 
     if (!email) {
       return res.status(400).send({
@@ -456,6 +459,8 @@ module.exports.forgotPassword = async (req, res) => {
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });
 
+    console.log("User found:", user ? user.email : "No user found");
+
     if (!user) {
       return res.status(404).send({
         error: "No user found with that email."
@@ -463,28 +468,29 @@ module.exports.forgotPassword = async (req, res) => {
     }
 
     const resetToken = crypto.randomBytes(32).toString("hex");
+    const resetLink = `${process.env.CLIENT_URL}/reset-password-user/${resetToken}`;
+
+    console.log("Generated reset link:", resetLink);
 
     user.passwordResetToken = resetToken;
-    user.passwordResetExpires = Date.now() + 1000 * 60 * 15; // 15 minutes
+    user.passwordResetExpires = Date.now() + 1000 * 60 * 15;
 
     await user.save();
 
     return res.status(200).send({
-      message: "Password reset token generated successfully.",
-      resetToken,
-      resetLink: `http://localhost:5173/reset-password/${resetToken}`
+      message: "Quick test successful. Reset link generated.",
+      resetLink
     });
   } catch (error) {
-    console.error("Forgot password error:", error);
+    console.error("Forgot password user error:", error);
     return res.status(500).send({
-      error: "Failed to process forgot password request."
+      error: error.message || "Failed to process request."
     });
   }
 };
 
 
-// Reset Password
-module.exports.resetPassword = async (req, res) => {
+module.exports.resetPasswordUser = async (req, res) => {
   try {
     const { token } = req.params;
     const { password, confirmPassword } = req.body;
@@ -501,12 +507,6 @@ module.exports.resetPassword = async (req, res) => {
       });
     }
 
-    if (password.length < 8) {
-      return res.status(400).send({
-        error: "Password must be at least 8 characters."
-      });
-    }
-
     const user = await User.findOne({
       passwordResetToken: token,
       passwordResetExpires: { $gt: Date.now() }
@@ -518,21 +518,19 @@ module.exports.resetPassword = async (req, res) => {
       });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    user.password = hashedPassword;
+    user.password = await bcrypt.hash(password, 10);
     user.passwordResetToken = "";
     user.passwordResetExpires = null;
 
     await user.save();
 
     return res.status(200).send({
-      message: "Password has been reset successfully."
+      message: "Password reset successful."
     });
   } catch (error) {
-    console.error("Reset password error:", error);
+    console.error("Reset password user error:", error);
     return res.status(500).send({
-      error: "Failed to reset password."
+      error: error.message || "Failed to reset password."
     });
   }
 };
