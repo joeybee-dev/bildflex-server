@@ -4,6 +4,15 @@ const mongoose = require("mongoose");
 const cors = require("cors");
 
 const userRoutes = require("./routes/user");
+const handymanRoutes = require("./routes/handyman");
+const designerRoutes = require("./routes/designer");
+const contractorRoutes = require("./routes/contractor");
+const supplierRoutes = require("./routes/supplier");
+const inquiryRoutes = require("./routes/inquiry");
+const favoriteRoutes = require("./routes/favorite");
+const bookingRoutes = require("./routes/booking");
+const messageRoutes = require("./routes/message");
+const searchHistoryRoutes = require("./routes/searchHistory");
 
 const app = express();
 
@@ -32,6 +41,16 @@ mongoose.connection.on("error", (err) => {
 });
 
 app.use("/users", userRoutes);
+app.use("/handymen", handymanRoutes);
+app.use("/designers", designerRoutes);
+app.use("/contractors", contractorRoutes);
+app.use("/suppliers", supplierRoutes);
+app.use("/inquiries", inquiryRoutes);
+app.use("/favorites", favoriteRoutes);
+app.use("/bookings", bookingRoutes);
+app.use("/messages", messageRoutes);
+app.use("/searchHistories", searchHistoryRoutes);
+
 
 if (require.main === module) {
   app.listen(PORT, () => {

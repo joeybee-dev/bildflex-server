@@ -1,22 +1,11 @@
 const mongoose = require("mongoose");
 const bcrypt = require("bcryptjs");
 
-const userSchema = new mongoose.Schema(
+const handymanSchema = new mongoose.Schema(
   {
-    profilePhoto: {
-      type: String,
-      default: ""
-    },
-    firstName: {
-      type: String,
-      required: [true, "First name is required"],
-      trim: true
-    },
-    lastName: {
-      type: String,
-      default: "",
-      trim: true
-    },
+    profilePhoto: { type: String, default: "" },
+    firstName: { type: String, required: [true, "First name is required"], trim: true },
+    lastName: { type: String, default: "", trim: true },
     gender: {
       type: String,
       required: [true, "Gender is required"],
@@ -35,46 +24,39 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"]
     },
-    mobileNumber: {
-      type: String,
-      default: "",
-      trim: true
-    },
-    city: {
-      type: String,
-      required: [true, "City is required"],
-      trim: true
-    },
-    province: {
-      type: String,
-      default: "",
-      trim: true
-    },
-    country: {
-      type: String,
-      default: "Philippines",
-      trim: true
-    },
+    mobileNumber: { type: String, default: "", trim: true },
+    city: { type: String, required: [true, "City is required"], trim: true },
+    province: { type: String, default: "", trim: true },
+    country: { type: String, default: "Philippines", trim: true },
     aboutMe: {
       type: String,
       default: "",
       trim: true,
       maxlength: [1000, "About me must not exceed 1000 characters"]
     },
+    skills: { type: [String], default: [] },
+    servicesOffered: { type: [String], default: [] },
+    yearsExperience: { type: Number, default: 0, min: [0, "Years of experience cannot be negative"] },
+    serviceAreas: { type: [String], default: [] },
+    availabilityStatus: {
+      type: String,
+      enum: ["available", "busy", "offline"],
+      default: "available"
+    },
+    portfolioImages: { type: [String], default: [] },
+    averageRating: { type: Number, default: 0, min: 0, max: 5 },
+    totalReviews: { type: Number, default: 0, min: 0 },
     userType: {
       type: String,
-      default: "user",
-      enum: ["user", "admin"]
+      default: "handyman",
+      enum: ["handyman"]
     },
     accountStatus: {
       type: String,
       default: "active",
       enum: ["active", "suspended", "archived", "pending"]
     },
-    isFeatured: {
-      type: Boolean,
-      default: false
-    },
+    isFeatured: { type: Boolean, default: false },
     subscriptionPlan: {
       type: String,
       default: "basic",
@@ -97,7 +79,7 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-userSchema.pre("save", async function () {
+handymanSchema.pre("save", async function () {
   try {
     if (!this.isModified("password"));
 
@@ -109,8 +91,8 @@ userSchema.pre("save", async function () {
   }
 });
 
-userSchema.methods.comparePassword = async function (enteredPassword) {
+handymanSchema.methods.comparePassword = async function (enteredPassword) {
   return bcrypt.compare(enteredPassword, this.password);
 };
 
-module.exports = mongoose.model("User", userSchema);
+module.exports = mongoose.model("Handyman", handymanSchema);

@@ -1,0 +1,99 @@
+const mongoose = require("mongoose");
+const bcrypt = require("bcryptjs");
+
+const contractorSchema = new mongoose.Schema(
+  {
+    profilePhoto: { type: String, default: "" },
+    businessName: { type: String, required: [true, "Business name is required"], trim: true },
+    contactPersonFirstName: { type: String, required: [true, "Contact person first name is required"], trim: true },
+    contactPersonLastName: { type: String, default: "", trim: true },
+    gender: {
+      type: String,
+      enum: ["Male", "Female", "Other", "Prefer not to say"],
+      default: "Prefer not to say"
+    },
+    birthYear: {
+      type: Number,
+      min: [1900, "Birth year is too old"],
+      max: [new Date().getFullYear(), "Birth year cannot be in the future"]
+    },
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      unique: true,
+      trim: true,
+      lowercase: true,
+      match: [/^\S+@\S+\.\S+$/, "Please enter a valid email address"]
+    },
+    mobileNumber: { type: String, default: "", trim: true },
+    city: { type: String, required: [true, "City is required"], trim: true },
+    province: { type: String, default: "", trim: true },
+    country: { type: String, default: "Philippines", trim: true },
+    aboutUs: {
+      type: String,
+      default: "",
+      trim: true,
+      maxlength: [1500, "About me must not exceed 1500 characters"]
+    },
+    contractorSpecializations: { type: [String], default: [] },
+    servicesOffered: { type: [String], default: [] },
+    yearsExperience: { type: Number, default: 0, min: [0, "Years of experience cannot be negative"] },
+    serviceAreas: { type: [String], default: [] },
+    availabilityStatus: {
+      type: String,
+      enum: ["available", "busy", "offline"],
+      default: "available"
+    },
+    portfolioImages: { type: [String], default: [] },
+    averageRating: { type: Number, default: 0, min: 0, max: 5 },
+    totalReviews: { type: Number, default: 0, min: 0 },
+    userType: {
+      type: String,
+      default: "contractor",
+      enum: ["contractor"]
+    },
+    accountStatus: {
+      type: String,
+      default: "active",
+      enum: ["active", "suspended", "archived", "pending"]
+    },
+    isFeatured: { type: Boolean, default: false },
+    subscriptionPlan: {
+      type: String,
+      default: "basic",
+      enum: ["basic", "standard", "premium"]
+    },
+    password: {
+      type: String,
+      required: [true, "Password is required"],
+      minlength: [8, "Password must be at least 8 characters long"]
+    },
+    passwordResetToken: {
+      type: String,
+      default: ""
+    },
+    passwordResetExpires: {
+      type: Date,
+      default: null
+    }
+  },
+  { timestamps: true }
+);
+
+contractorSchema.pre("save", async function () {
+  try {
+    if (!this.isModified("password"));
+
+    const salt = await bcrypt.genSalt(10);
+    this.password = await bcrypt.hash(this.password, salt);
+
+  } catch (error) {
+
+  }
+});
+
+contractorSchema.methods.comparePassword = async function (enteredPassword) {
+  return bcrypt.compare(enteredPassword, this.password);
+};
+
+module.exports = mongoose.model("Contractor", contractorSchema);

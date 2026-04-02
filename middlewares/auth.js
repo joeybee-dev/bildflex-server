@@ -1,13 +1,12 @@
 const jwt = require("jsonwebtoken");
+
 const secret = process.env.JWT_SECRET;
 
-// Create Access Token
 module.exports.createAccessToken = (user) => {
   return jwt.sign(
     {
       id: user._id,
       email: user.email,
-      isAdmin: user.isAdmin,
       userType: user.userType
     },
     secret,
@@ -15,19 +14,16 @@ module.exports.createAccessToken = (user) => {
   );
 };
 
-// Verify Token
 module.exports.verify = (req, res, next) => {
   let token = req.headers.authorization;
 
   if (!token) {
-    return res.status(401).send({ error: "Authorization header missing" });
+    return res.status(401).send({ error: "Unauthorized" });
   }
 
-  if (!token.startsWith("Bearer ")) {
-    return res.status(401).send({ error: "Invalid authorization format" });
+  if (token.startsWith("Bearer ")) {
+    token = token.slice(7);
   }
-
-  token = token.slice(7);
 
   jwt.verify(token, secret, (err, decodedToken) => {
     if (err) {
@@ -39,10 +35,9 @@ module.exports.verify = (req, res, next) => {
   });
 };
 
-// Verify Admin
 module.exports.verifyAdmin = (req, res, next) => {
-  if (!req.user || !req.user.isAdmin) {
-    return res.status(403).send({ error: "Action forbidden" });
+  if (!req.user || req.user.userType !== "admin") {
+    return res.status(403).send({ error: "Forbidden: Admin access only" });
   }
 
   next();
