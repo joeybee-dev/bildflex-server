@@ -346,7 +346,7 @@ module.exports.forgotPassword = async (req, res) => {
 
     await user.save();
 
-    const resetLink = `${process.env.CLIENT_URL}/reset-password-user/${resetToken}`;
+    const resetLink = `${process.env.CLIENT_URL}/reset-password/${resetToken}`;
 
     // Uncomment when sendEmail is ready
     // await sendEmail({
