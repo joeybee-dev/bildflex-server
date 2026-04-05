@@ -244,17 +244,24 @@ module.exports.getActiveHandymen = async (req, res) => {
 // Public: get featured handymen
 module.exports.getFeaturedHandymen = async (req, res) => {
   try {
-    const handymen = await Handyman.find({
+    const featuredHandymen = await Handyman.find({
       isFeatured: true,
       accountStatus: "active"
     })
-      .select("-password -passwordResetToken -passwordResetExpires")
-      .sort({ createdAt: -1 });
+      .select(
+        "profilePhoto firstName city skills availabilityStatus averageRatings totalReviews isFeatured"
+      )
+      .sort({ averageRatings: -1, totalReviews: -1, createdAt: -1 });
 
-    return res.status(200).send({ handymen });
+    return res.status(200).json({
+      success: true,
+      handymen: featuredHandymen
+    });
   } catch (error) {
     console.error("Get featured handymen error:", error);
-    return res.status(500).send({
+
+    return res.status(500).json({
+      success: false,
       error: error.message || "Failed to fetch featured handymen."
     });
   }

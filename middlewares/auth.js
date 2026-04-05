@@ -35,10 +35,32 @@ module.exports.verify = (req, res, next) => {
   });
 };
 
-module.exports.verifyAdmin = (req, res, next) => {
-  if (!req.user || req.user.userType !== "admin") {
-    return res.status(403).send({ error: "Forbidden: Admin access only" });
-  }
 
-  next();
+module.exports.verifyAdmin = async (req, res, next) => {
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized"
+      });
+    }
+
+    const User = require("../models/User");
+    const user = await User.findById(req.user.id);
+
+    if (!user || user.userType !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Admin access only"
+      });
+    }
+
+    next();
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Authorization error",
+      error: error.message
+    });
+  }
 };

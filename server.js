@@ -3,6 +3,7 @@ const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
 
+const adminRoutes = require("./routes/admin");
 const userRoutes = require("./routes/user");
 const handymanRoutes = require("./routes/handyman");
 const designerRoutes = require("./routes/designer");
@@ -40,6 +41,7 @@ mongoose.connection.on("error", (err) => {
   console.error("MongoDB connection error:", err);
 });
 
+app.use("/admin", adminRoutes);
 app.use("/users", userRoutes);
 app.use("/handymen", handymanRoutes);
 app.use("/designers", designerRoutes);
